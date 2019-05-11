@@ -49,8 +49,14 @@ pub enum OutputKind {
     /// Outputs an executable
     Executable,
 }
-
+<<<<<<< HEAD
+#[derive(Copy,Clone)]
 pub struct Context {
+=======
+#[derive(Copy,Clone)]
+pub struct Context<'a> {
+    marker: PhantomData<&'a Context<'a>>,
+>>>>>>> cba98f88a2e5eedd9a9f0e628a07dbedff34467a
     ptr: *mut crate::sys::gcc_jit_context,
 }
 
