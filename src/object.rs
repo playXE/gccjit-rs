@@ -9,12 +9,11 @@ use std::str;
 /// in and of itself, but it provides the implementation for Debug
 /// used by most objects in this library.
 #[derive(Copy, Clone)]
-pub struct Object<'ctx> {
-    marker: PhantomData<&'ctx Context<'ctx>>,
+pub struct Object {
     ptr: *mut gccjit_sys::gcc_jit_object,
 }
 
-impl<'ctx> fmt::Debug for Object<'ctx> {
+impl fmt::Debug for Object {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_object_get_debug_string(self.ptr);
@@ -26,23 +25,23 @@ impl<'ctx> fmt::Debug for Object<'ctx> {
 }
 
 /// ToObject is a trait implemented by types that can be upcast to Object.
-pub trait ToObject<'ctx> {
-    fn to_object(&self) -> Object<'ctx>;
+pub trait ToObject {
+    fn to_object(&self) -> Object;
 }
 
-impl<'ctx> ToObject<'ctx> for Object<'ctx> {
-    fn to_object(&self) -> Object<'ctx> {
+impl ToObject for Object {
+    fn to_object(&self) -> Object {
         unsafe { from_ptr(self.ptr) }
     }
 }
 
-pub unsafe fn from_ptr<'ctx>(ptr: *mut gccjit_sys::gcc_jit_object) -> Object<'ctx> {
+pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_object) -> Object {
     Object {
-        marker: PhantomData,
+        
         ptr: ptr,
     }
 }
 
-pub unsafe fn get_ptr<'ctx>(object: &Object<'ctx>) -> *mut gccjit_sys::gcc_jit_object {
+pub unsafe fn get_ptr(object: &Object) -> *mut gccjit_sys::gcc_jit_object {
     object.ptr
 }

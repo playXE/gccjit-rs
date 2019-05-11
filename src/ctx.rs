@@ -50,23 +50,21 @@ pub enum OutputKind {
     Executable,
 }
 
-pub struct Context<'a> {
-    marker: PhantomData<&'a Context<'a>>,
+pub struct Context {
     ptr: *mut crate::sys::gcc_jit_context,
 }
 
-impl Default for Context<'static> {
-    fn default() -> Context<'static> {
+impl Default for Context {
+    fn default() -> Context {
         unsafe {
             Context {
-                marker: PhantomData,
                 ptr: crate::sys::gcc_jit_context_acquire(),
             }
         }
     }
 }
 
-impl<'a> Context<'a> {
+impl Context {
     pub fn add_command_line_option(&self,name: impl AsRef<str>) {
         let name_ref = name.as_ref();
         let cstr = CString::new(name_ref).unwrap();
@@ -145,10 +143,10 @@ impl<'a> Context<'a> {
     /// Creates a new child context from this context. The child context
     /// is a fully-featured context, but it has a lifetime that is strictly
     /// less than the lifetime that spawned it.
-    pub fn new_child_context<'b>(&'b self) -> Context<'b> {
+    pub fn new_child_context<>(& self) -> Context<> {
         unsafe {
             Context {
-                marker: PhantomData,
+                
                 ptr: gccjit_sys::gcc_jit_context_new_child_context(self.ptr),
             }
         }
@@ -157,12 +155,12 @@ impl<'a> Context<'a> {
     /// Creates a new location for use by gdb when debugging a JIT compiled
     /// program. The filename, line, and col are used by gdb to "show" your
     /// source when in a debugger.
-    pub fn new_location<'b, S: AsRef<str>>(
-        &'b self,
+    pub fn new_location< S: AsRef<str>>(
+        & self,
         filename: S,
         line: i32,
         col: i32,
-    ) -> Location<'b> {
+    ) -> Location<> {
         unsafe {
             let filename_ref = filename.as_ref();
             let cstr = CString::new(filename_ref).unwrap();
@@ -176,23 +174,23 @@ impl<'a> Context<'a> {
     /// for some primitive types - utilizers of this library are encouraged
     /// to provide their own types that implement Typeable for ease of type
     /// creation.
-    pub fn new_type<'b, T: types::Typeable>(&'b self) -> types::Type<'b> {
+    pub fn new_type< T: types::Typeable>(& self) -> types::Type<> {
         <T as types::Typeable>::get_type(self)
     }
 
-    pub fn new_vector_type<'b,T: types::Typeable>(&'b self,units: usize) -> types::Type<'b> {
+    pub fn new_vector_type<T: types::Typeable>(& self,units: usize) -> types::Type<> {
         let ty = unsafe {gcc_jit_type_get_vector(types::get_ptr(&<T as types::Typeable>::get_type(self)),units)};
         unsafe {types::from_ptr(ty)}
     }
 
     /// Constructs a new array type with a given base element type and a
     /// size.
-    pub fn new_array_type<'b>(
-        &'b self,
-        loc: Option<Location<'b>>,
-        ty: types::Type<'b>,
+    pub fn new_array_type<>(
+        & self,
+        loc: Option<Location<>>,
+        ty: types::Type<>,
         num_elements: i32,
-    ) -> types::Type<'b> {
+    ) -> types::Type<> {
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
             None => ptr::null_mut(),
@@ -211,12 +209,12 @@ impl<'a> Context<'a> {
     /// Constructs a new struct type with the given name, optional source location,
     /// and a list of fields. The returned struct is concrete and new fields cannot
     /// be added to it.
-    pub fn new_struct_type<'b, S: AsRef<str>>(
-        &'b self,
-        loc: Option<Location<'b>>,
+    pub fn new_struct_type< S: AsRef<str>>(
+        & self,
+        loc: Option<Location<>>,
         name: S,
-        fields: &[Field<'b>],
-    ) -> Struct<'b> {
+        fields: &[Field<>],
+    ) -> Struct<> {
         let name_ref = name.as_ref();
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
@@ -242,11 +240,11 @@ impl<'a> Context<'a> {
 
     /// Constructs a new struct type whose fields are not known. Fields can
     /// be added to this struct later, but only once.
-    pub fn new_opaque_struct_type<'b, S: AsRef<str>>(
-        &'b self,
-        loc: Option<Location<'b>>,
+    pub fn new_opaque_struct_type< S: AsRef<str>>(
+        & self,
+        loc: Option<Location<>>,
         name: S,
-    ) -> Struct<'b> {
+    ) -> Struct<> {
         let name_ref = name.as_ref();
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
@@ -261,12 +259,12 @@ impl<'a> Context<'a> {
     }
 
     /// Creates a new union type from a set of fields.
-    pub fn new_union_type<'b, S: AsRef<str>>(
-        &'b self,
-        loc: Option<Location<'b>>,
+    pub fn new_union_type< S: AsRef<str>>(
+        & self,
+        loc: Option<Location<>>,
         name: S,
-        fields: &[Field<'b>],
-    ) -> types::Type<'b> {
+        fields: &[Field<>],
+    ) -> types::Type<> {
         let name_ref = name.as_ref();
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
@@ -290,13 +288,13 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub fn new_case<'b>(&self,min_value: impl ToRValue<'b>,max_value: impl ToRValue<'b>,dest_block: Block<'b>) -> Case<'a> {
+    pub fn new_case<>(&self,min_value: impl ToRValue<>,max_value: impl ToRValue<>,dest_block: Block<>) -> Case {
         unsafe {
             Case::from_ptr(gcc_jit_context_new_case(self.ptr,rvalue::get_ptr(&min_value.to_rvalue()),rvalue::get_ptr(&max_value.to_rvalue()),dest_block.ptr))
         }
     }
 
-    pub fn new_field<'b>(&self,loc: Option<Location<'b>>,ty: types::Type<'b>,name: impl AsRef<str>) -> Field<'b> {
+    pub fn new_field<>(&self,loc: Option<Location<>>,ty: types::Type<>,name: impl AsRef<str>) -> Field<> {
         unsafe {
             field::from_ptr(
                 gcc_jit_context_new_field(
@@ -313,13 +311,13 @@ impl<'a> Context<'a> {
     /// parameter types, and an optional location. The last flag can
     /// make the function variadic, although Rust can't really handle
     /// the varargs calling convention.
-    pub fn new_function_pointer_type<'b>(
-        &'a self,
-        loc: Option<Location<'b>>,
-        return_type: types::Type<'b>,
-        param_types: &[types::Type<'b>],
+    pub fn new_function_pointer_type<>(
+        &self,
+        loc: Option<Location<>>,
+        return_type: types::Type<>,
+        param_types: &[types::Type<>],
         is_variadic: bool,
-    ) -> types::Type<'b> {
+    ) -> types::Type<> {
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
             None => ptr::null_mut(),
@@ -344,15 +342,15 @@ impl<'a> Context<'a> {
 
     /// Creates a new function with the given function kind, return type, parameters, name,
     /// and whether or not the function is variadic.
-    pub fn new_function<'b, S: AsRef<str>>(
-        &'b self,
-        loc: Option<Location<'b>>,
+    pub fn new_function< S: AsRef<str>>(
+        & self,
+        loc: Option<Location<>>,
         kind: FunctionType,
-        return_ty: types::Type<'b>,
-        params: &[Parameter<'b>],
+        return_ty: types::Type<>,
+        params: &[Parameter<>],
         name: S,
         is_variadic: bool,
-    ) -> Function<'a> {
+    ) -> Function {
         let name_ref = name.as_ref();
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
@@ -380,14 +378,14 @@ impl<'a> Context<'a> {
     }
 
     /// Creates a new binary operation between two RValues and produces a new RValue.
-    pub fn new_binary_op<'b, L: ToRValue<'a>, R: ToRValue<'b>>(
-        &'b self,
-        loc: Option<Location<'b>>,
+    pub fn new_binary_op< L: ToRValue, R: ToRValue<>>(
+        & self,
+        loc: Option<Location<>>,
         op: BinaryOp,
-        ty: types::Type<'b>,
+        ty: types::Type<>,
         left: L,
         right: R,
-    ) -> RValue<'b> {
+    ) -> RValue<> {
         let left_rvalue = left.to_rvalue();
         let right_rvalue = right.to_rvalue();
         let loc_ptr = match loc {
@@ -408,13 +406,13 @@ impl<'a> Context<'a> {
     }
 
     /// Creates a unary operation on one RValue and produces a result RValue.
-    pub fn new_unary_op<'b, T: ToRValue<'b>>(
-        &'b self,
-        loc: Option<Location<'b>>,
+    pub fn new_unary_op< T: ToRValue<>>(
+        & self,
+        loc: Option<Location<>>,
         op: UnaryOp,
-        ty: types::Type<'b>,
+        ty: types::Type<>,
         target: T,
-    ) -> RValue<'b> {
+    ) -> RValue<> {
         let rvalue = target.to_rvalue();
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
@@ -432,13 +430,13 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub fn new_comparison<'b, L: ToRValue<'b>, R: ToRValue<'b>>(
-        &'b self,
-        loc: Option<Location<'b>>,
+    pub fn new_comparison< L: ToRValue<>, R: ToRValue<>>(
+        & self,
+        loc: Option<Location<>>,
         op: ComparisonOp,
         left: L,
         right: R,
-    ) -> RValue<'b> {
+    ) -> RValue<> {
         let left_rvalue = left.to_rvalue();
         let right_rvalue = right.to_rvalue();
         let loc_ptr = match loc {
@@ -464,12 +462,12 @@ impl<'a> Context<'a> {
     /// together with LValues and Parameters, for example), so in order to
     /// mix the types of the arguments it may be necessary to call to_rvalue()
     /// before calling this function.
-    pub fn new_call<'b>(
-        &'b self,
-        loc: Option<Location<'b>>,
-        func: Function<'b>,
-        args: &[RValue<'b>],
-    ) -> RValue<'b> {
+    pub fn new_call<>(
+        & self,
+        loc: Option<Location<>>,
+        func: Function<>,
+        args: &[RValue<>],
+    ) -> RValue<> {
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
             None => ptr::null_mut(),
@@ -491,12 +489,12 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub fn new_rvalue_from_vector<'b>(
-        &'b self,
-        loc: Option<Location<'b>>,
-        elements: Vec<RValue<'b>>,
-        ty: types::Type<'b>,
-    ) -> RValue<'b> {
+    pub fn new_rvalue_from_vector<>(
+        & self,
+        loc: Option<Location<>>,
+        elements: Vec<RValue<>>,
+        ty: types::Type<>,
+    ) -> RValue<> {
         let mut elems = vec![];
         for elem in elements.iter() {
             unsafe { elems.push(rvalue::get_ptr(elem)) };
@@ -518,12 +516,12 @@ impl<'a> Context<'a> {
     /// Creates an indirect function call that dereferences a function pointer and
     /// attempts to invoke it with the given arguments. The RValue that is returned
     /// is the result of the function call.
-    pub fn new_call_through_ptr<'b, F: ToRValue<'a>>(
-        &'b self,
-        loc: Option<Location<'b>>,
+    pub fn new_call_through_ptr< F: ToRValue>(
+        & self,
+        loc: Option<Location<>>,
         fun_ptr: F,
-        args: &[RValue<'b>],
-    ) -> RValue<'b> {
+        args: &[RValue<>],
+    ) -> RValue<> {
         let fun_ptr_rvalue = fun_ptr.to_rvalue();
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
@@ -548,12 +546,12 @@ impl<'a> Context<'a> {
     }
 
     /// Cast an RValue to a specific type. I don't know what happens when the cast fails yet.
-    pub fn new_cast<'b, T: ToRValue<'a>>(
-        &'b self,
-        loc: Option<Location<'b>>,
+    pub fn new_cast< T: ToRValue>(
+        & self,
+        loc: Option<Location<>>,
         value: T,
-        dest_type: types::Type<'b>,
-    ) -> RValue<'b> {
+        dest_type: types::Type<>,
+    ) -> RValue<> {
         let rvalue = value.to_rvalue();
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
@@ -572,12 +570,12 @@ impl<'a> Context<'a> {
 
     /// Creates an LValue from an array pointer and an offset. The LValue can be the target
     /// of an assignment, or it can be converted into an RValue (i.e. loaded).
-    pub fn new_array_access<'b, A: ToRValue<'b>, I: ToRValue<'b>>(
-        &'b self,
-        loc: Option<Location<'b>>,
+    pub fn new_array_access< A: ToRValue<>, I: ToRValue<>>(
+        & self,
+        loc: Option<Location<>>,
         array_ptr: A,
         index: I,
-    ) -> LValue<'b> {
+    ) -> LValue<> {
         let array_rvalue = array_ptr.to_rvalue();
         let idx_rvalue = index.to_rvalue();
         let loc_ptr = match loc {
@@ -596,7 +594,7 @@ impl<'a> Context<'a> {
     }
 
     /// Creates a new RValue from a given long value.
-    pub fn new_rvalue_from_long<'b>(&'b self, ty: types::Type<'b>, value: i64) -> RValue<'b> {
+    pub fn new_rvalue_from_long<>(& self, ty: types::Type<>, value: i64) -> RValue<> {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_context_new_rvalue_from_long(
                 self.ptr,
@@ -608,7 +606,7 @@ impl<'a> Context<'a> {
     }
 
     /// Creates a new RValue from a given int value.
-    pub fn new_rvalue_from_int<'b>(&'b self, ty: types::Type<'b>, value: i32) -> RValue<'b> {
+    pub fn new_rvalue_from_int<>(& self, ty: types::Type<>, value: i32) -> RValue<> {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_context_new_rvalue_from_int(
                 self.ptr,
@@ -620,7 +618,7 @@ impl<'a> Context<'a> {
     }
 
     /// Creates a new RValue from a given double value.
-    pub fn new_rvalue_from_double<'b>(&'b self, ty: types::Type<'b>, value: f64) -> RValue<'b> {
+    pub fn new_rvalue_from_double<>(& self, ty: types::Type<>, value: f64) -> RValue<> {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_context_new_rvalue_from_double(
                 self.ptr,
@@ -632,7 +630,7 @@ impl<'a> Context<'a> {
     }
 
     /// Creates a zero element for a given type.
-    pub fn new_rvalue_zero<'b>(&'b self, ty: types::Type<'b>) -> RValue<'b> {
+    pub fn new_rvalue_zero<>(& self, ty: types::Type<>) -> RValue<> {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_context_zero(self.ptr, types::get_ptr(&ty));
             rvalue::from_ptr(ptr)
@@ -640,7 +638,7 @@ impl<'a> Context<'a> {
     }
 
     /// Creates a one element for a given type.
-    pub fn new_rvalue_one<'b>(&'b self, ty: types::Type<'b>) -> RValue<'b> {
+    pub fn new_rvalue_one<>(& self, ty: types::Type<>) -> RValue<> {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_context_one(self.ptr, types::get_ptr(&ty));
             rvalue::from_ptr(ptr)
@@ -650,7 +648,7 @@ impl<'a> Context<'a> {
     /// Creates an RValue for a raw pointer. This function
     /// requires that the lifetime of the pointer be greater
     /// than that of the jitted program.
-    pub fn new_rvalue_from_ptr<'b>(&'b self, ty: types::Type<'b>, value: *mut ()) -> RValue<'b> {
+    pub fn new_rvalue_from_ptr<>(& self, ty: types::Type<>, value: *mut ()) -> RValue<> {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_context_new_rvalue_from_ptr(
                 self.ptr,
@@ -662,7 +660,7 @@ impl<'a> Context<'a> {
     }
 
     /// Creates a null RValue.
-    pub fn new_null<'b>(&'b self, ty: types::Type<'b>) -> RValue<'b> {
+    pub fn new_null<>(& self, ty: types::Type<>) -> RValue<> {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_context_null(self.ptr, types::get_ptr(&ty));
             rvalue::from_ptr(ptr)
@@ -670,7 +668,7 @@ impl<'a> Context<'a> {
     }
 
     /// Creates a string literal RValue.
-    pub fn new_string_literal<'b, S: AsRef<str>>(&'b self, value: S) -> RValue<'b> {
+    pub fn new_string_literal< S: AsRef<str>>(& self, value: S) -> RValue<> {
         unsafe {
             let cstr = CString::new(value.as_ref()).unwrap();
             let ptr = gccjit_sys::gcc_jit_context_new_string_literal(self.ptr, cstr.as_ptr());
@@ -690,12 +688,12 @@ impl<'a> Context<'a> {
     }
 
     /// Creates a new parameter with a given type, name, and location.
-    pub fn new_parameter<'b, S: AsRef<str>>(
-        &'b self,
-        loc: Option<Location<'b>>,
-        ty: types::Type<'b>,
+    pub fn new_parameter< S: AsRef<str>>(
+        & self,
+        loc: Option<Location<>>,
+        ty: types::Type<>,
         name: S,
-    ) -> Parameter<'b> {
+    ) -> Parameter<> {
         let name_ref = name.as_ref();
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
@@ -716,7 +714,7 @@ impl<'a> Context<'a> {
     /// Get a builtin function from gcc. It's not clear what functions are
     /// builtin and you'll likely need to consult the GCC internal docs
     /// for a full list.
-    pub fn get_builtin_function<'b, S: AsRef<str>>(&'a self, name: S) -> Function<'b> {
+    pub fn get_builtin_function< S: AsRef<str>>(&self, name: S) -> Function<> {
         let name_ref = name.as_ref();
         unsafe {
             let cstr = CString::new(name_ref).unwrap();
@@ -726,7 +724,7 @@ impl<'a> Context<'a> {
     }
 }
 
-pub fn context_get_ptr<'a>(ctx: &'a Context<'a>) -> *mut gcc_jit_context {
+pub fn context_get_ptr(ctx: &Context) -> *mut gcc_jit_context {
     ctx.ptr
 }
 

@@ -13,19 +13,18 @@ use std::ptr;
 use gccjit_sys::{gcc_jit_case, gcc_jit_case_as_object, gcc_jit_block_end_with_switch};
 
 #[derive(Copy, Clone)]
-pub struct Case<'ctx> {
-    marker: PhantomData<&'ctx Context<'ctx>>,
+pub struct Case/**/ {
+    //marker: PhantomData<&'ctx Context>,
     ptr: *mut gcc_jit_case
 }
 
-impl<'ctx> Case<'ctx> {
+impl Case {
     pub fn get_ptr(self) -> *mut gcc_jit_case {
         self.ptr
     }
 
-    pub fn from_ptr(ptr: *mut gcc_jit_case) -> Case<'ctx> {
+    pub fn from_ptr(ptr: *mut gcc_jit_case) -> Case {
         Case {
-            marker: PhantomData,
             ptr
         }
     }
@@ -73,8 +72,8 @@ pub enum ComparisonOp {
 }
 
 
-impl<'a> ToObject<'a> for Case<'a> {
-    fn to_object(&self) -> Object<'a> {
+impl ToObject for Case {
+    fn to_object(&self) -> Object {
         unsafe {
             let ptr = gcc_jit_case_as_object(self.ptr);
             object::from_ptr(ptr)
@@ -87,13 +86,13 @@ impl<'a> ToObject<'a> for Case<'a> {
 /// instruction, which can be either a jump to one block, a conditional branch to
 /// two blocks (true/false branches), a return, or a void return.
 #[derive(Copy, Clone)]
-pub struct Block<'ctx> {
-    marker: PhantomData<&'ctx Context<'ctx>>,
+pub struct Block {
+
     pub(crate) ptr: *mut gccjit_sys::gcc_jit_block,
 }
 
-impl<'ctx> ToObject<'ctx> for Block<'ctx> {
-    fn to_object(&self) -> Object<'ctx> {
+impl ToObject for Block {
+    fn to_object(&self) -> Object {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_block_as_object(self.ptr);
             object::from_ptr(ptr)
@@ -101,15 +100,15 @@ impl<'ctx> ToObject<'ctx> for Block<'ctx> {
     }
 }
 
-impl<'ctx> fmt::Debug for Block<'ctx> {
+impl fmt::Debug for Block {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let obj = self.to_object();
         obj.fmt(fmt)
     }
 }
 
-impl<'ctx> Block<'ctx> {
-    pub fn get_function(&self) -> Function<'ctx> {
+impl Block {
+    pub fn get_function(&self) -> Function {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_block_get_function(self.ptr);
             function::from_ptr(ptr)
@@ -118,7 +117,7 @@ impl<'ctx> Block<'ctx> {
 
     /// Evaluates the rvalue parameter and discards its result. Equivalent
     /// to (void)<expr> in C.
-    pub fn add_eval<T: ToRValue<'ctx>>(&self, loc: Option<Location<'ctx>>, value: T) {
+    pub fn add_eval<T: ToRValue>(&self, loc: Option<Location>, value: T) {
         let rvalue = value.to_rvalue();
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
@@ -131,9 +130,9 @@ impl<'ctx> Block<'ctx> {
 
     /// Assigns the value of an rvalue to an lvalue directly. Equivalent
     /// to <lvalue> = <rvalue> in C.
-    pub fn add_assignment<L: ToLValue<'ctx>, R: ToRValue<'ctx>>(
+    pub fn add_assignment<L: ToLValue, R: ToRValue>(
         &self,
-        loc: Option<Location<'ctx>>,
+        loc: Option<Location>,
         assign_target: L,
         value: R,
     ) {
@@ -156,9 +155,9 @@ impl<'ctx> Block<'ctx> {
     /// Performs a binary operation on an LValue and an RValue, assigning
     /// the result of the binary operation to the LValue upon completion.
     /// Equivalent to the *=, +=, -=, etc. operator family in C.
-    pub fn add_assignment_op<L: ToLValue<'ctx>, R: ToRValue<'ctx>>(
+    pub fn add_assignment_op<L: ToLValue, R: ToRValue>(
         &self,
-        loc: Option<Location<'ctx>>,
+        loc: Option<Location>,
         assign_target: L,
         op: BinaryOp,
         value: R,
@@ -182,7 +181,7 @@ impl<'ctx> Block<'ctx> {
 
     /// Adds a comment to a block. It's unclear from the documentation what
     /// this actually means.
-    pub fn add_comment<S: AsRef<str>>(&self, loc: Option<Location<'ctx>>, message: S) {
+    pub fn add_comment<S: AsRef<str>>(&self, loc: Option<Location>, message: S) {
         let message_ref = message.as_ref();
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
@@ -196,12 +195,12 @@ impl<'ctx> Block<'ctx> {
 
     /// Terminates a block by branching to one of two blocks, depending
     /// on the value of a conditional RValue.
-    pub fn end_with_conditional<T: ToRValue<'ctx>>(
+    pub fn end_with_conditional<T: ToRValue>(
         &self,
-        loc: Option<Location<'ctx>>,
+        loc: Option<Location>,
         cond: T,
-        on_true: Block<'ctx>,
-        on_false: Block<'ctx>,
+        on_true: Block,
+        on_false: Block,
     ) {
         let cond_rvalue = cond.to_rvalue();
         let loc_ptr = match loc {
@@ -220,7 +219,7 @@ impl<'ctx> Block<'ctx> {
     }
 
     /// Terminates a block by unconditionally jumping to another block.
-    pub fn end_with_jump(&self, loc: Option<Location<'ctx>>, target: Block<'ctx>) {
+    pub fn end_with_jump(&self, loc: Option<Location>, target: Block) {
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
             None => ptr::null_mut(),
@@ -230,7 +229,7 @@ impl<'ctx> Block<'ctx> {
         }
     }
 
-    pub fn end_with_switch(&self,loc: Option<Location<'ctx>>,expr: impl ToRValue<'ctx>,default_block: Block<'ctx>,cases: Vec<Case<'ctx>>) {
+    pub fn end_with_switch(&self,loc: Option<Location>,expr: impl ToRValue,default_block: Block,cases: Vec<Case>) {
         unsafe {
             let mut cases_ = cases.iter().map(|elem| elem.get_ptr()).collect::<Vec<_>>();
             gcc_jit_block_end_with_switch(
@@ -247,7 +246,7 @@ impl<'ctx> Block<'ctx> {
     /// the rvalue to be the return value of the function. This is equivalent
     /// to C's "return <expr>". This function can only be used to terminate
     /// a block within a function whose return type is not void.
-    pub fn end_with_return<T: ToRValue<'ctx>>(&self, loc: Option<Location<'ctx>>, ret: T) {
+    pub fn end_with_return<T: ToRValue>(&self, loc: Option<Location>, ret: T) {
         let ret_rvalue = ret.to_rvalue();
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
@@ -266,7 +265,7 @@ impl<'ctx> Block<'ctx> {
     /// no value. This is equivalent to C's bare "return" with no expression.
     /// This function can only be used to terminate a block within a function
     /// that returns void.
-    pub fn end_with_void_return(&self, loc: Option<Location<'ctx>>) {
+    pub fn end_with_void_return(&self, loc: Option<Location>) {
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
             None => ptr::null_mut(),
@@ -279,9 +278,9 @@ impl<'ctx> Block<'ctx> {
 
 }
 
-pub unsafe fn from_ptr<'ctx>(ptr: *mut gccjit_sys::gcc_jit_block) -> Block<'ctx> {
+pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_block) -> Block {
     Block {
-        marker: PhantomData,
+        
         ptr: ptr,
     }
 }

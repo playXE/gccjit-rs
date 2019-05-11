@@ -44,13 +44,12 @@ pub enum FunctionType {
 /// by constructing basic blocks and connecting them together. Locals are declared
 /// at the function level.
 #[derive(Copy, Clone)]
-pub struct Function<'ctx> {
-    marker: PhantomData<&'ctx Context<'ctx>>,
+pub struct Function {
     ptr: *mut gccjit_sys::gcc_jit_function,
 }
 
-impl<'ctx> ToObject<'ctx> for Function<'ctx> {
-    fn to_object(&self) -> Object<'ctx> {
+impl ToObject for Function {
+    fn to_object(&self) -> Object {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_function_as_object(self.ptr);
             object::from_ptr(ptr)
@@ -58,15 +57,15 @@ impl<'ctx> ToObject<'ctx> for Function<'ctx> {
     }
 }
 
-impl<'ctx> fmt::Debug for Function<'ctx> {
+impl fmt::Debug for Function {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let obj = self.to_object();
         obj.fmt(fmt)
     }
 }
 
-impl<'ctx> Function<'ctx> {
-    pub fn get_param(&self, idx: i32) -> Parameter<'ctx> {
+impl Function {
+    pub fn get_param(&self, idx: i32) -> Parameter {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_function_get_param(self.ptr, idx);
             parameter::from_ptr(ptr)
@@ -80,7 +79,7 @@ impl<'ctx> Function<'ctx> {
         }
     }
 
-    pub fn new_block<S: AsRef<str>>(&self, name: S) -> Block<'ctx> {
+    pub fn new_block<S: AsRef<str>>(&self, name: S) -> Block {
         unsafe {
             let cstr = CString::new(name.as_ref()).unwrap();
             let ptr = gccjit_sys::gcc_jit_function_new_block(self.ptr, cstr.as_ptr());
@@ -90,10 +89,10 @@ impl<'ctx> Function<'ctx> {
 
     pub fn new_local<S: AsRef<str>>(
         &self,
-        loc: Option<Location<'ctx>>,
-        ty: Type<'ctx>,
+        loc: Option<Location>,
+        ty: Type,
         name: S,
-    ) -> LValue<'ctx> {
+    ) -> LValue {
         unsafe {
             let loc_ptr = match loc {
                 Some(loc) => location::get_ptr(&loc),
@@ -111,13 +110,13 @@ impl<'ctx> Function<'ctx> {
     }
 }
 
-pub unsafe fn from_ptr<'ctx>(ptr: *mut gccjit_sys::gcc_jit_function) -> Function<'ctx> {
+pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_function) -> Function {
     Function {
-        marker: PhantomData,
+        
         ptr: ptr,
     }
 }
 
-pub unsafe fn get_ptr<'ctx>(loc: &Function<'ctx>) -> *mut gccjit_sys::gcc_jit_function {
+pub unsafe fn get_ptr(loc: &Function) -> *mut gccjit_sys::gcc_jit_function {
     loc.ptr
 }

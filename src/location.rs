@@ -7,31 +7,30 @@ use std::marker::PhantomData;
 
 /// A Location represents a location used when debugging jitted code.
 #[derive(Copy, Clone)]
-pub struct Location<'ctx> {
-    marker: PhantomData<&'ctx Context<'ctx>>,
+pub struct Location {
     ptr: *mut gccjit_sys::gcc_jit_location,
 }
 
-impl<'ctx> ToObject<'ctx> for Location<'ctx> {
-    fn to_object(&self) -> Object<'ctx> {
+impl ToObject for Location {
+    fn to_object(&self) -> Object {
         unsafe { object::from_ptr(gccjit_sys::gcc_jit_location_as_object(self.ptr)) }
     }
 }
 
-impl<'ctx> fmt::Debug for Location<'ctx> {
+impl fmt::Debug for Location {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let obj = self.to_object();
         obj.fmt(fmt)
     }
 }
 
-pub unsafe fn from_ptr<'ctx>(ptr: *mut gccjit_sys::gcc_jit_location) -> Location<'ctx> {
+pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_location) -> Location {
     Location {
-        marker: PhantomData,
+        
         ptr: ptr,
     }
 }
 
-pub unsafe fn get_ptr<'ctx>(loc: &Location<'ctx>) -> *mut gccjit_sys::gcc_jit_location {
+pub unsafe fn get_ptr(loc: &Location) -> *mut gccjit_sys::gcc_jit_location {
     loc.ptr
 }

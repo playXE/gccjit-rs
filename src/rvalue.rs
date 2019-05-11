@@ -23,42 +23,41 @@ use crate::lvalue::LValue;
 /// RValues can be dereferenced, used for field accesses, and are the parameters
 /// given to a majority of the gccjit API calls.
 #[derive(Copy, Clone)]
-pub struct RValue<'ctx> {
-    marker: PhantomData<&'ctx Context<'ctx>>,
+pub struct RValue {
     ptr: *mut gccjit_sys::gcc_jit_rvalue,
 }
 
 /// ToRValue is a trait implemented by types that can be converted to, or
 /// treated as, an RValue.
-pub trait ToRValue<'ctx> {
-    fn to_rvalue(&self) -> RValue<'ctx>;
+pub trait ToRValue {
+    fn to_rvalue(&self) -> RValue;
 }
 
-impl<'ctx> ToObject<'ctx> for RValue<'ctx> {
-    fn to_object(&self) -> Object<'ctx> {
+impl ToObject for RValue {
+    fn to_object(&self) -> Object {
         unsafe { object::from_ptr(gccjit_sys::gcc_jit_rvalue_as_object(self.ptr)) }
     }
 }
 
-impl<'ctx> fmt::Debug for RValue<'ctx> {
+impl fmt::Debug for RValue {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let obj = self.to_object();
         obj.fmt(fmt)
     }
 }
 
-impl<'ctx> ToRValue<'ctx> for RValue<'ctx> {
-    fn to_rvalue(&self) -> RValue<'ctx> {
+impl ToRValue for RValue {
+    fn to_rvalue(&self) -> RValue {
         unsafe { from_ptr(self.ptr) }
     }
 }
 
 macro_rules! binary_operator_for {
     ($ty:ty, $name:ident, $op:expr) => {
-        impl<'ctx> $ty for RValue<'ctx> {
-            type Output = RValue<'ctx>;
+        impl $ty for RValue {
+            type Output = RValue;
 
-            fn $name(self, rhs: RValue<'ctx>) -> RValue<'ctx> {
+            fn $name(self, rhs: RValue) -> RValue {
                 unsafe {
                     let rhs_rvalue = rhs.to_rvalue();
                     let obj_ptr = object::get_ptr(&self.to_object());
@@ -88,12 +87,12 @@ binary_operator_for!(Rem, rem, BinaryOp::Modulo);
 binary_operator_for!(BitAnd, bitand, BinaryOp::BitwiseAnd);
 binary_operator_for!(BitOr, bitor, BinaryOp::BitwiseOr);
 binary_operator_for!(BitXor, bitxor, BinaryOp::BitwiseXor);
-binary_operator_for!(Shl<RValue<'ctx>>, shl, BinaryOp::LShift);
-binary_operator_for!(Shr<RValue<'ctx>>, shr, BinaryOp::RShift);
+binary_operator_for!(Shl<RValue>, shl, BinaryOp::LShift);
+binary_operator_for!(Shr<RValue>, shr, BinaryOp::RShift);
 
-impl<'ctx> RValue<'ctx> {
+impl RValue {
     /// Gets the type of this RValue.
-    pub fn get_type(&self) -> Type<'ctx> {
+    pub fn get_type(&self) -> Type {
         unsafe {
             let ptr = gccjit_sys::gcc_jit_rvalue_get_type(self.ptr);
             types::from_ptr(ptr)
@@ -102,7 +101,7 @@ impl<'ctx> RValue<'ctx> {
 
     /// Given an RValue x and a Field f, returns an RValue representing
     /// C's x.f.
-    pub fn access_field(&self, loc: Option<Location<'ctx>>, field: Field<'ctx>) -> RValue<'ctx> {
+    pub fn access_field(&self, loc: Option<Location>, field: Field) -> RValue {
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
             None => ptr::null_mut(),
@@ -118,9 +117,9 @@ impl<'ctx> RValue<'ctx> {
     /// C's x->f.
     pub fn dereference_field(
         &self,
-        loc: Option<Location<'ctx>>,
-        field: Field<'ctx>,
-    ) -> LValue<'ctx> {
+        loc: Option<Location>,
+        field: Field,
+    ) -> LValue {
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
             None => ptr::null_mut(),
@@ -136,7 +135,7 @@ impl<'ctx> RValue<'ctx> {
     }
 
     /// Given a RValue x, returns an RValue that represents *x.
-    pub fn dereference(&self, loc: Option<Location<'ctx>>) -> LValue<'ctx> {
+    pub fn dereference(&self, loc: Option<Location>) -> LValue {
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
             None => ptr::null_mut(),
@@ -149,13 +148,13 @@ impl<'ctx> RValue<'ctx> {
     }
 }
 
-pub unsafe fn from_ptr<'ctx>(ptr: *mut gccjit_sys::gcc_jit_rvalue) -> RValue<'ctx> {
+pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_rvalue) -> RValue {
     RValue {
-        marker: PhantomData,
+        
         ptr: ptr,
     }
 }
 
-pub unsafe fn get_ptr<'ctx>(rvalue: &RValue<'ctx>) -> *mut gccjit_sys::gcc_jit_rvalue {
+pub unsafe fn get_ptr(rvalue: &RValue) -> *mut gccjit_sys::gcc_jit_rvalue {
     rvalue.ptr
 }
