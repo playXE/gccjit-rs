@@ -52,7 +52,7 @@ pub enum OutputKind {
 
 
 #[derive(Copy,Clone)]
-pub struct Context<'a> {
+pub struct Context {
 
     ptr: *mut crate::sys::gcc_jit_context,
 }
