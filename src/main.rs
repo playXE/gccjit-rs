@@ -3,7 +3,7 @@ extern crate gccjit_rs;
 use ctx::*;
 use gccjit_rs::*;
 
-use gccjit_rs::block::BinaryOp;
+
 use gccjit_rs::function::FunctionType;
 use gccjit_rs::rvalue::ToRValue;
 use std::intrinsics::transmute;

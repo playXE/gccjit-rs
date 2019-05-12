@@ -1,9 +1,8 @@
-use crate::sys;
 
 use crate::ctx::*;
 use crate::sys::*;
 use std::fmt;
-use std::marker::PhantomData;
+
 
 #[derive(Copy, Clone)]
 pub struct Type {
@@ -97,7 +96,7 @@ impl<T: Typeable> Typeable for *mut T {
 impl<T: Typeable> Typeable for *const T {
     fn get_type(ctx: &Context) -> Type {
         unsafe {
-            let ctx_ptr = context_get_ptr(ctx);
+           
             let ptr = gcc_jit_type_get_pointer(get_ptr(&T::get_type(ctx)));
             from_ptr(ptr).make_const()
         }

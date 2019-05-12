@@ -18,6 +18,14 @@ use gccjit_sys::*;
 
 use crate::sys::*;
 
+
+#[repr(C)]
+pub enum GlobalKind {
+    Exported = 0,
+    External = 2,
+    Internal = 1,
+}
+
 /// Represents an optimization level that the JIT compiler
 /// will use when compiling your code.
 #[repr(C)]
@@ -153,6 +161,18 @@ impl Context {
             Context {
                 ptr: gccjit_sys::gcc_jit_context_new_child_context(self.ptr),
             }
+        }
+    }
+
+    pub fn new_global(&self,loc: Option<Location>,kind: GlobalKind,ty: types::Type,name: &str) -> LValue {
+        unsafe {
+            lvalue::from_ptr(gcc_jit_context_new_global(
+                self.ptr, 
+                location::get_ptr(&loc.unwrap_or(location::from_ptr(ptr::null_mut()))), 
+                mem::transmute(kind), 
+                types::get_ptr(&ty), 
+                std::ffi::CString::new(name).unwrap().as_ptr())
+            )
         }
     }
 
