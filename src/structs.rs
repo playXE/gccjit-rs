@@ -64,8 +64,5 @@ impl fmt::Debug for Struct {
 }
 
 pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_struct) -> Struct {
-    Struct {
-        
-        ptr: ptr,
-    }
+    Struct { ptr: ptr }
 }

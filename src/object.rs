@@ -36,10 +36,7 @@ impl ToObject for Object {
 }
 
 pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_object) -> Object {
-    Object {
-        
-        ptr: ptr,
-    }
+    Object { ptr: ptr }
 }
 
 pub unsafe fn get_ptr(object: &Object) -> *mut gccjit_sys::gcc_jit_object {

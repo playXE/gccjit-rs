@@ -11,8 +11,6 @@ pub struct Type {
 }
 
 impl Type {
-
-
     /// Given a type T, creates a type to *T, a pointer to T.
     pub fn make_pointer(self) -> Type {
         unsafe { from_ptr(gccjit_sys::gcc_jit_type_get_pointer(self.ptr)) }
@@ -23,12 +21,8 @@ impl Type {
         unsafe { from_ptr(gccjit_sys::gcc_jit_type_get_const(self.ptr)) }
     }
 
-    pub fn from_const(ctx: &Context ,u: u32) -> Type {
-        unsafe {
-            from_ptr(
-                gcc_jit_context_get_type(context_get_ptr(ctx),u)
-            )
-        }
+    pub fn from_const(ctx: &Context, u: u32) -> Type {
+        unsafe { from_ptr(gcc_jit_context_get_type(context_get_ptr(ctx), u)) }
     }
 
     /// Given a type T, creates a new type of volatile T, which
@@ -91,11 +85,9 @@ typeable_def!(f32, gcc_jit_types_GCC_JIT_TYPE_FLOAT);
 typeable_def!(f64, gcc_jit_types_GCC_JIT_TYPE_DOUBLE);
 typeable_def!(usize, gcc_jit_types_GCC_JIT_TYPE_SIZE_T);
 
-
 impl<T: Typeable> Typeable for *mut T {
     fn get_type(ctx: &Context) -> Type {
         unsafe {
-
             let ptr = gcc_jit_type_get_pointer(get_ptr(&T::get_type(ctx)));
             from_ptr(ptr)
         }
@@ -113,9 +105,7 @@ impl<T: Typeable> Typeable for *const T {
 }
 
 pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_type) -> Type {
-    Type {
-        ptr: ptr,
-    }
+    Type { ptr: ptr }
 }
 
 pub unsafe fn get_ptr(ty: &Type) -> *mut gccjit_sys::gcc_jit_type {

@@ -26,10 +26,7 @@ impl fmt::Debug for Field {
 }
 
 pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_field) -> Field {
-    Field {
-        
-        ptr: ptr,
-    }
+    Field { ptr: ptr }
 }
 
 pub unsafe fn get_ptr(f: &Field) -> *mut gccjit_sys::gcc_jit_field {

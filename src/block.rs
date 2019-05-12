@@ -5,17 +5,17 @@ use crate::lvalue::{self, ToLValue};
 use crate::object::{self, Object, ToObject};
 use crate::rvalue::{self, ToRValue};
 use gccjit_sys;
+use gccjit_sys::{gcc_jit_block_end_with_switch, gcc_jit_case, gcc_jit_case_as_object};
 use std::ffi::CString;
 use std::fmt;
 use std::marker::PhantomData;
 use std::mem;
 use std::ptr;
-use gccjit_sys::{gcc_jit_case, gcc_jit_case_as_object, gcc_jit_block_end_with_switch};
 
 #[derive(Copy, Clone)]
-pub struct Case/**/ {
+pub struct Case /**/ {
     //marker: PhantomData<&'ctx Context>,
-    ptr: *mut gcc_jit_case
+    ptr: *mut gcc_jit_case,
 }
 
 impl Case {
@@ -24,12 +24,9 @@ impl Case {
     }
 
     pub fn from_ptr(ptr: *mut gcc_jit_case) -> Case {
-        Case {
-            ptr
-        }
+        Case { ptr }
     }
 }
-
 
 /// BinaryOp is a enum representing the various binary operations
 /// that gccjit knows how to codegen.
@@ -71,7 +68,6 @@ pub enum ComparisonOp {
     GreaterThanEquals,
 }
 
-
 impl ToObject for Case {
     fn to_object(&self) -> Object {
         unsafe {
@@ -87,7 +83,6 @@ impl ToObject for Case {
 /// two blocks (true/false branches), a return, or a void return.
 #[derive(Copy, Clone)]
 pub struct Block {
-
     pub(crate) ptr: *mut gccjit_sys::gcc_jit_block,
 }
 
@@ -229,7 +224,13 @@ impl Block {
         }
     }
 
-    pub fn end_with_switch(&self,loc: Option<Location>,expr: impl ToRValue,default_block: Block,cases: Vec<Case>) {
+    pub fn end_with_switch(
+        &self,
+        loc: Option<Location>,
+        expr: impl ToRValue,
+        default_block: Block,
+        cases: Vec<Case>,
+    ) {
         unsafe {
             let mut cases_ = cases.iter().map(|elem| elem.get_ptr()).collect::<Vec<_>>();
             gcc_jit_block_end_with_switch(
@@ -238,7 +239,7 @@ impl Block {
                 rvalue::get_ptr(&expr.to_rvalue()),
                 default_block.ptr,
                 cases_.len() as _,
-                cases_.as_mut_ptr()
+                cases_.as_mut_ptr(),
             );
         }
     }
@@ -274,13 +275,8 @@ impl Block {
             gccjit_sys::gcc_jit_block_end_with_void_return(self.ptr, loc_ptr);
         }
     }
-
-
 }
 
 pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_block) -> Block {
-    Block {
-        
-        ptr: ptr,
-    }
+    Block { ptr: ptr }
 }

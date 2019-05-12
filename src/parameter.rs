@@ -48,10 +48,7 @@ impl ToLValue for Parameter {
 }
 
 pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_param) -> Parameter {
-    Parameter {
-        
-        ptr: ptr,
-    }
+    Parameter { ptr: ptr }
 }
 
 pub unsafe fn get_ptr(loc: &Parameter) -> *mut gccjit_sys::gcc_jit_param {

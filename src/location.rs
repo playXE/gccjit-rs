@@ -25,10 +25,7 @@ impl fmt::Debug for Location {
 }
 
 pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_location) -> Location {
-    Location {
-        
-        ptr: ptr,
-    }
+    Location { ptr: ptr }
 }
 
 pub unsafe fn get_ptr(loc: &Location) -> *mut gccjit_sys::gcc_jit_location {

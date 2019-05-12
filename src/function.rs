@@ -72,6 +72,15 @@ impl Function {
         }
     }
 
+    pub fn get_address(&self, loc: Option<Location>) -> crate::rvalue::RValue {
+        unsafe {
+            crate::rvalue::from_ptr(gccjit_sys::gcc_jit_function_get_address(
+                self.ptr,
+                location::get_ptr(&loc.unwrap_or(location::from_ptr(ptr::null_mut()))),
+            ))
+        }
+    }
+
     pub fn dump_to_dot<S: AsRef<str>>(&self, path: S) {
         unsafe {
             let cstr = CString::new(path.as_ref()).unwrap();
@@ -87,12 +96,7 @@ impl Function {
         }
     }
 
-    pub fn new_local<S: AsRef<str>>(
-        &self,
-        loc: Option<Location>,
-        ty: Type,
-        name: S,
-    ) -> LValue {
+    pub fn new_local<S: AsRef<str>>(&self, loc: Option<Location>, ty: Type, name: S) -> LValue {
         unsafe {
             let loc_ptr = match loc {
                 Some(loc) => location::get_ptr(&loc),
@@ -111,10 +115,7 @@ impl Function {
 }
 
 pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_function) -> Function {
-    Function {
-        
-        ptr: ptr,
-    }
+    Function { ptr: ptr }
 }
 
 pub unsafe fn get_ptr(loc: &Function) -> *mut gccjit_sys::gcc_jit_function {

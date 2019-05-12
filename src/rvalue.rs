@@ -115,11 +115,7 @@ impl RValue {
 
     /// Given an RValue x and a Field f, returns an LValue representing
     /// C's x->f.
-    pub fn dereference_field(
-        &self,
-        loc: Option<Location>,
-        field: Field,
-    ) -> LValue {
+    pub fn dereference_field(&self, loc: Option<Location>, field: Field) -> LValue {
         let loc_ptr = match loc {
             Some(loc) => unsafe { location::get_ptr(&loc) },
             None => ptr::null_mut(),
@@ -149,10 +145,7 @@ impl RValue {
 }
 
 pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_rvalue) -> RValue {
-    RValue {
-        
-        ptr: ptr,
-    }
+    RValue { ptr: ptr }
 }
 
 pub unsafe fn get_ptr(rvalue: &RValue) -> *mut gccjit_sys::gcc_jit_rvalue {

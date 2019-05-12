@@ -84,10 +84,7 @@ impl LValue {
 }
 
 pub unsafe fn from_ptr(ptr: *mut gccjit_sys::gcc_jit_lvalue) -> LValue {
-    LValue {
-        
-        ptr: ptr,
-    }
+    LValue { ptr: ptr }
 }
 
 pub unsafe fn get_ptr(lvalue: &LValue) -> *mut gccjit_sys::gcc_jit_lvalue {
