@@ -18,7 +18,6 @@ use gccjit_sys::*;
 
 use crate::sys::*;
 
-
 #[repr(C)]
 pub enum GlobalKind {
     Exported = 0,
@@ -164,15 +163,22 @@ impl Context {
         }
     }
 
-    pub fn new_global(&self,loc: Option<Location>,kind: GlobalKind,ty: types::Type,name: &str) -> LValue {
+    pub fn new_global(
+        &self,
+        loc: Option<Location>,
+        kind: GlobalKind,
+        ty: types::Type,
+        name: &str,
+    ) -> LValue {
         unsafe {
+            let cstr = std::ffi::CString::new(name).unwrap();
             lvalue::from_ptr(gcc_jit_context_new_global(
-                self.ptr, 
-                location::get_ptr(&loc.unwrap_or(location::from_ptr(ptr::null_mut()))), 
-                mem::transmute(kind), 
-                types::get_ptr(&ty), 
-                std::ffi::CString::new(name).unwrap().as_ptr())
-            )
+                self.ptr,
+                location::get_ptr(&loc.unwrap_or(location::from_ptr(ptr::null_mut()))),
+                mem::transmute(kind),
+                types::get_ptr(&ty),
+                cstr.as_ptr(),
+            ))
         }
     }
 
@@ -331,11 +337,12 @@ impl Context {
         name: impl AsRef<str>,
     ) -> Field {
         unsafe {
+            let cstr = CString::new(name.as_ref()).unwrap();
             field::from_ptr(gcc_jit_context_new_field(
                 self.ptr,
                 location::get_ptr(&loc.unwrap_or(location::from_ptr(ptr::null_mut()))),
                 types::get_ptr(&ty),
-                CString::new(name.as_ref()).unwrap().as_ptr(),
+                cstr.as_ptr(),
             ))
         }
     }
