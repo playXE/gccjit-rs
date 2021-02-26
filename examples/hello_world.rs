@@ -1,14 +1,14 @@
 use gccjit_rs::*;
 
+use block::*;
 use ctx::*;
 use function::*;
-use block::*;
 use std::intrinsics::transmute;
 
 fn main() {
     let ctx = Context::default();
     ctx.set_dump_code(true);
-    ctx.set_opt_level(OptimizationLevel::Standart);
+    ctx.set_opt_level(OptimizationLevel::Standard);
 
     let char_ptr = ctx.new_type::<char>().make_pointer(); // char*
     let int = ctx.new_type::<i32>(); // int
@@ -17,39 +17,33 @@ fn main() {
         None,
         FunctionType::Extern,
         ctx.new_type::<()>(),
-        &[ctx.new_parameter(None,char_ptr,"fmt")],
+        &[ctx.new_parameter(None, char_ptr, "fmt")],
         "printf",
-        true
+        true,
     );
-
 
     let main = ctx.new_function(
         None,
         FunctionType::Exported,
         int,
-        &[ctx.new_parameter(None,int,"argc"),ctx.new_parameter(None,argv_ty,"argv")],
+        &[
+            ctx.new_parameter(None, int, "argc"),
+            ctx.new_parameter(None, argv_ty, "argv"),
+        ],
         "main",
-        false
+        false,
     );
 
     let string = ctx.new_string_literal("Hello,world!\n");
 
     let block = main.new_block("entry");
-    block.add_eval(
-        None,
-        ctx.new_call(
-            None,
-            printf,
-            &[string]
-        )
-    );
+    block.add_eval(None, ctx.new_call(None, printf, &[string]));
 
-    block.end_with_return(None,ctx.new_rvalue_from_int(int,0));
+    block.end_with_return(None, ctx.new_rvalue_from_int(int, 0));
 
     let result = ctx.compile();
 
-    let main_fn: fn() -> i32 = unsafe {transmute(result.get_function("main"))};
+    let main_fn: fn() -> i32 = unsafe { transmute(result.get_function("main")) };
 
     main_fn();
-
 }
